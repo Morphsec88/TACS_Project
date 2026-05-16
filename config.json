@@ -1,0 +1,140 @@
+{
+    "network": {
+        "start_port": 7720,
+        "end_port": 7740
+    },
+    "security": {
+        "secret_token": "IDEAPAD_SECURE_TOKEN_2026"
+    }
+}
+Körültekintően használja a kódot.2. LÉPÉS: Az "Állásszerző", letisztult Fő Kód (tacs_core.py)Most nyisd meg a tacs_core.py fájlodat, töröld ki a tartalmát, és cseréld le erre a professzionális, tiszta verzióra. Figyeld meg, hogyan használja a Python gyári logging modulját, és hogyan olvassa be a JSON fájlt:pythonimport socket
+import threading
+import random
+import psutil
+import ctypes
+import json
+import logging
+import os
+
+# ==============================================================================
+# PROFESSZIONÁLIS VÁLLALATI NAPLÓZÁS (LOGGING) BEÁLLÍTÁSA
+# ==============================================================================
+# Minden eseményt egy tiszta, időbélyeggel ellátott logfájlba mentünk a háttérben
+logging.basicConfig(
+    filename='tacs_security.log',
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# ==============================================================================
+# KONFIGURÁCIÓ DINAMIKUS BEOLVASÁSA (CLEAN CODE ELVEK)
+# ==============================================================================
+try:
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+    
+    START_PORT = config["network"]["start_port"]
+    END_PORT = config["network"]["end_port"]
+    TITKOS_TOKEN = config["security"]["secret_token"]
+    logging.info("A konfigurációs fájl sikeresen beolvasva.")
+except Exception as e:
+    logging.critical(f"Nem sikerült beolvasni a config.json-t: {e}")
+    # Ha nincs meg a config, biztonsági okokból alapértelmezett értékeket használunk
+    START_PORT = 7720
+    END_PORT = 7740
+    TITKOS_TOKEN = "DEFAULT_SECURE_TOKEN"
+
+PORT_TARTOMANY = list(range(START_PORT, END_PORT + 1))
+erintett_portok = set()
+lock = threading.Lock()
+
+MEMORIA_POOL = [None] * 5
+AKTUALIS_POOL_INDEX = 0
+
+# ==============================================================================
+# 1. RÉTEG: KVANTUM-ÖSVÉNY HÁLÓZATI LABIRINTUS LOGIKA
+# ==============================================================================
+def kiertekel_biztonsagi_matrix(port):
+    global erintett_portok
+    with lock:
+        erintett_portok.add(port)
+        szuz_portok = [p for p in PORT_TARTOMANY if p not in erintett_portok]
+        
+        if not szuz_portok:
+            return None
+            
+        kozep_index = len(szuz_portok) // 2
+        return szuz_portok[kozep_index]
+
+def kezel_kapu_kommunikacio(kliens_socket, port, cim):
+    aktualis_valodi_kapu = kiertekel_biztonsagi_matrix(port)
+    
+    try:
+        if port == aktualis_valodi_kapu and port not in erintett_portok:
+            logging.warning(f"Sikeres lokális Zero-Network belépési kísérlet a porton: {port} erről a címről: {cim}")
+            kliens_socket.send(b"WELCOME_TO_TACS_QUANTUM_CORE\n")
+        else:
+            # Dokumentált támadási kísérlet rögzítése a logfájlban
+            logging.info(f"Anomália észlelve: a(z) {cim} cím megérintette a(z) {port}-es portot. Labirintus aktiválva.")
+            kliens_socket.send(b"\x03\x01" + random.randbytes(4) + b"\xef\x00\x31")
+            
+    except Exception as e:
+        logging.error(f"Hiba a hálózati kommunikáció során a(z) {port}-es porton: {e}")
+    finally:
+        kliens_socket.close()
+
+def ajto_figyelo(port):
+    szerver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        szerver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        szerver.bind(("0.0.0.0", port))
+        szerver.listen(10)
+        while True:
+            kliens_socket, cim = szerver.accept()
+            threading.Thread(target=kezel_kapu_kommunikacio, args=(kliens_socket, port, cim), daemon=True).start()
+    except Exception as e:
+        logging.error(f"Nem sikerült elindítani a figyelést a(z) {port}-es porton: {e}")
+
+# ==============================================================================
+# HARDVER TELEMETRIA ÉS 2. RÉTEG (AMORF MEMÓRIAVÉDELEM)
+# ==============================================================================
+def futtat_telemetria_es_amorfizmus():
+    global AKTUALIS_POOL_INDEX
+    logging.info("Hardver Telemetria és Amorf Memóriavédelem háttérszál elindult.")
+    
+    while True:
+        try:
+            cpu_terheltseg = psutil.cpu_percent(interval=1.0)
+            cpu_orajel = psutil.cpu_freq().current if psutil.cpu_freq() else 0
+            
+            if MEMORIA_POOL[AKTUALIS_POOL_INDEX] is not None:
+                ctypes.memset(id(MEMORIA_POOL[AKTUALIS_POOL_INDEX]), 0, len(TITKOS_TOKEN))
+                MEMORIA_POOL[AKTUALIS_POOL_INDEX] = None
+                
+            AKTUALIS_POOL_INDEX = random.randint(0, 4)
+            MEMORIA_POOL[AKTUALIS_POOL_INDEX] = str(TITKOS_TOKEN)
+            
+        except Exception as e:
+            logging.error(f"Hiba a telemetriai vagy amorf memóriakezelési ciklusban: {e}")
+
+# ==============================================================================
+# RENDSZER INDÍTÁSA
+# ==============================================================================
+def indit_teljes_tacs():
+    print("=================================================================")
+    print(" Thermal-Amorphous Cyber Shield (TACS) - INTEGRÁLT MOTOR v1.1")
+    print(" Környezet: Lenovo IdeaPad 100 | Windows 10 (Rendszergazda)")
+    print("=================================================================")
+    print("[*] Rendszer indulása... Ellenőrizd a 'tacs_security.log' fájlt a részletekért.")
+    
+    threading.Thread(target=futtat_telemetria_es_amorfizmus, daemon=True).start()
+    
+    for port in PORT_TARTOMANY:
+        threading.Thread(target=ajto_figyelo, args=(port,), daemon=True).start()
+        
+    logging.info("TACS Rendszer teljes védelmi lánca sikeresen inicializálva.")
+
+if __name__ == "__main__":
+    indit_teljes_tacs()
+    threading.Event().wait()
